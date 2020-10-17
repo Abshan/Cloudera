@@ -53,7 +53,7 @@ const string master_addr = "192.168.3.102:7051";
         shared_ptr<KuduSession> session;
         //shared_ptr<KuduInsert> insert;
 
-        cout << "Creatting Client...\n";
+        cout << "Creating Client...\n";
         //Create and connecting to the client
         KuduClientBuilder()
             .add_master_server_addr(master_addr)
