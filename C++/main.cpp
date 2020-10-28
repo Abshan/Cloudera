@@ -35,13 +35,14 @@ using kudu::client::KuduTableAlterer;
 using kudu::client::KuduTableCreator;
 using kudu::client::KuduValue;
 using kudu::client::sp::shared_ptr;
+using std::cin;
 using std::cout;
+using std::endl;
 using std::string;
 using std::vector;
-using std::endl;
-using std::cin;
 
-void ingestData(){
+int ingestData()
+{
 
     const string master_addr = "192.168.3.102:7051";
     const string table_name = "impala::default.test_table";
@@ -53,7 +54,7 @@ void ingestData(){
         shared_ptr<KuduSession> session;
         //shared_ptr<KuduInsert> insert;
 
-        cout << "Creating Client...\n";
+        cout << "Creatting Client...\n";
         //Create and connecting to the client
         KuduClientBuilder()
             .add_master_server_addr(master_addr)
@@ -63,54 +64,58 @@ void ingestData(){
         //Check if table is available
         cout << "Checking if table is available..\n";
         Status status = client->OpenTable(table_name, &table);
-        if (status.ok())
+        if (!status.ok())
         {
-            cout << "Found the table.\n";
-            session = table->client()->NewSession();
-            std::ifstream file;
-            file.open("../research1.csv");
-            cout << "Reading file...\n";
-            while (file.good())
-            {
-                string line;
-                getline(file, line, '\n');
-                vector<string> data;
-                std::stringstream st(line);
-                while (st.good())
-                {
-                    string subs;
-                    getline(st, subs, ',');
-                    data.push_back(subs);
-                }
-                
-                int id = std::stoi(data[0]);
-                string tab = data[1];
-                string brdwn = data[2];
-                string sec_brdwn = data[3];
-                int year = std::stoi(data[4]);
-                int value = std::stoi(data[5]);
-                string unit = data[6];
-
-                //Inserting values line by line
-                cout << "Inserting Values...\n";
-                KuduInsert *insert = table->NewInsert();
-                KuduPartialRow *row = insert->mutable_row();
-                row->SetInt32("id", id);
-                row->SetString("tab", tab);
-                row->SetString("brdwn", brdwn);
-                row->SetString("sec_brdwn", sec_brdwn);
-                row->SetInt32("year", year);
-                row->SetInt32("value", value);
-                row->SetString("unit", unit);
-
-                //executing the insert query
-
-                session->Apply(insert);
-                cout << "Inserted\n";
-            }
-            cout << "Insert Complete!!!\n";
-            session->Close();
+            cout << "Failed to build client: " << status.message() << endl;
+            return 1;
         }
+
+        cout << "Found the table.\n";
+        session = table->client()->NewSession();
+        std::ifstream file;
+        file.open("../research1.csv");
+        cout << "Reading file...\n";
+        while (file.good())
+        {
+            string line;
+            getline(file, line, '\n');
+            vector<string> data;
+            std::stringstream st(line);
+            while (st.good())
+            {
+                string subs;
+                getline(st, subs, ',');
+                data.push_back(subs);
+            }
+
+            int id = std::stoi(data[0]);
+            string tab = data[1];
+            string brdwn = data[2];
+            string sec_brdwn = data[3];
+            int year = std::stoi(data[4]);
+            int value = std::stoi(data[5]);
+            string unit = data[6];
+
+            //Inserting values line by line
+            cout << "Inserting Values...\n";
+            KuduInsert *insert = table->NewInsert();
+            KuduPartialRow *row = insert->mutable_row();
+            row->SetInt32("id", id);
+            row->SetString("tab", tab);
+            row->SetString("brdwn", brdwn);
+            row->SetString("sec_brdwn", sec_brdwn);
+            row->SetInt32("year", year);
+            row->SetInt32("value", value);
+            row->SetString("unit", unit);
+
+            //executing the insert query
+
+            session->Apply(insert);
+            cout << "Inserted\n";
+        }
+        cout << "Insert Complete!!!\n";
+        session->Close();
+        return 0;
     }
     catch (const std::exception &e)
     {
@@ -118,7 +123,8 @@ void ingestData(){
     }
 }
 
-int readData(){
+int readData()
+{
 
     string host = "192.168.3.102";
     string query = "select * from test_table";
@@ -160,8 +166,9 @@ int readData(){
     std::unique_ptr<hs2client::ColumnarRowSet> results;
     bool has_more = true;
     int total_rows = 0;
-    cout << "\tContents of test_table:\n";
-    while (has_more){
+    cout << "\n\t\tContents of test_table:\n";
+    while (has_more)
+    {
         status = execute->Fetch(&results, &has_more);
         if (!status.ok())
         {
@@ -180,7 +187,7 @@ int readData(){
         std::unique_ptr<hs2client::StringColumn> unit_col = results->GetStringCol(6);
         int16_t i = 0;
         cout << "\n";
-        cout<< id_col->GetData(i) << "\t"; 
+        cout << id_col->GetData(i) << "\t";
         cout << tab_col->GetData(i) << "\t";
         cout << brdwn_col->GetData(i) << "\t";
         cout << sec_brdwn_col->GetData(i) << "\t";
@@ -188,11 +195,10 @@ int readData(){
         cout << value_col->GetData(i) << "\t";
         cout << unit_col->GetData(i) << "\n";
     }
+    cout << endl;
     execute->Close();
     return 0;
-
 }
-
 
 int main()
 {
@@ -202,11 +208,16 @@ int main()
     cout << "Your option: ";
     cin >> x;
 
-    if(x == 1){
+    if (x == 1)
+    {
         ingestData();
-    }else if(x == 2){
+    }
+    else if (x == 2)
+    {
         readData();
-    }else{
+    }
+    else
+    {
         return 1;
     }
     return 0;
