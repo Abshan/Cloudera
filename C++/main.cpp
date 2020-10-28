@@ -43,7 +43,7 @@ using std::cin;
 
 void ingestData(){
 
-const string master_addr = "192.168.3.102:7051";
+    const string master_addr = "192.168.3.102:7051";
     const string table_name = "impala::default.test_table";
 
     try
@@ -120,7 +120,7 @@ const string master_addr = "192.168.3.102:7051";
 
 int readData(){
 
-string host = "192.168.3.102";
+    string host = "192.168.3.102";
     string query = "select * from test_table";
     int port = 21050;
     int conn_timeout = 0;
