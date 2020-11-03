@@ -10,6 +10,7 @@ import java.util.Scanner;
 
 public class KuduExample{
     
+    //Function to insert data into kudu tables
     static void IngestData(){
         KuduTable table;
         Insert insert;
@@ -27,8 +28,6 @@ public class KuduExample{
             System.out.println("Opening table..");
             table = kuduClient.openTable(tableName);
             System.out.println("Table opened...");
-
-            Kudu
 
             //Opening the CSV File
             System.out.println("Reading File...");
@@ -65,6 +64,7 @@ public class KuduExample{
                 insert_no++;
 
             }
+            //Closing the session
             session.close();
             System.out.println("File Ingestion Succesfull");
             System.out.println("No of inserted records: "+ insert_no);
@@ -79,6 +79,8 @@ public class KuduExample{
     }
 
     static void ReadData(){
+        
+        //Reading data from Kudu using Impala
         try {
 
             String jdbcUrl = "jdbc:impala://192.168.3.102:21050;AutoMech=0";
@@ -117,7 +119,7 @@ public class KuduExample{
     }
 
     public static void main(String[] args) {
-
+        //Simple terminal ui to insert & read data from Kudu and Impala
         Scanner obj = new Scanner(System.in);
         System.out.println("..............................");
         System.out.println("Enter No. 1 to Insert Data.");
