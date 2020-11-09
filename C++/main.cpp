@@ -44,8 +44,9 @@ using std::vector;
 int ingestData()
 {
 
-    const string master_addr = "192.168.3.102:7051";
+    const string master_addr = "cloudera:7051";
     const string table_name = "impala::default.test_table";
+    int num_inserts = 0;
 
     try
     {
@@ -73,8 +74,9 @@ int ingestData()
         cout << "Found the table.\n";
         session = table->client()->NewSession();
         std::ifstream file;
-        file.open("../research1.csv");
+        file.open("../research.csv");
         cout << "Reading file...\n";
+        cout << "Inserting Values...\n";
         while (file.good())
         {
             string line;
@@ -97,7 +99,6 @@ int ingestData()
             string unit = data[6];
 
             //Inserting values line by line
-            cout << "Inserting Values...\n";
             KuduInsert *insert = table->NewInsert();
             KuduPartialRow *row = insert->mutable_row();
             row->SetInt32("id", id);
@@ -109,11 +110,11 @@ int ingestData()
             row->SetString("unit", unit);
 
             //executing the insert query
-
             session->Apply(insert);
-            cout << "Inserted\n";
+            num_inserts += 1;
         }
         cout << "Insert Complete!!!\n";
+        cout << "Total number of inserts : "<< num_inserts << endl;
         session->Close();
         return 0;
     }
@@ -126,8 +127,8 @@ int ingestData()
 int readData()
 {
 
-    string host = "192.168.3.102";
-    string query = "select * from test_table";
+    string host = "cloudera";
+    string query = "SELECT * FROM test_table ORDER BY id";
     int port = 21050;
     int conn_timeout = 0;
     hs2client::ProtocolVersion protocol = hs2client::ProtocolVersion::HS2CLIENT_PROTOCOL_V7;
@@ -167,6 +168,7 @@ int readData()
     bool has_more = true;
     int total_rows = 0;
     cout << "\n\t\tContents of test_table:\n";
+    //int16_t i = 0;
     while (has_more)
     {
         status = execute->Fetch(&results, &has_more);
@@ -178,6 +180,7 @@ int readData()
             service->Close();
             return 1;
         }
+
         std::unique_ptr<hs2client::Int32Column> id_col = results->GetInt32Col(0);
         std::unique_ptr<hs2client::StringColumn> tab_col = results->GetStringCol(1);
         std::unique_ptr<hs2client::StringColumn> brdwn_col = results->GetStringCol(2);
@@ -185,15 +188,22 @@ int readData()
         std::unique_ptr<hs2client::Int32Column> year_col = results->GetInt32Col(4);
         std::unique_ptr<hs2client::Int32Column> value_col = results->GetInt32Col(5);
         std::unique_ptr<hs2client::StringColumn> unit_col = results->GetStringCol(6);
-        int16_t i = 0;
-        cout << "\n";
-        cout << id_col->GetData(i) << "\t";
-        cout << tab_col->GetData(i) << "\t";
-        cout << brdwn_col->GetData(i) << "\t";
-        cout << sec_brdwn_col->GetData(i) << "\t";
-        cout << year_col->GetData(i) << "\t";
-        cout << value_col->GetData(i) << "\t";
-        cout << unit_col->GetData(i) << "\n";
+
+        assert(id_col->length() == tab_col->length());
+        total_rows += id_col->length();
+        for (int64_t i = 0; i < id_col->length(); i++)
+        {
+            cout << id_col->GetData(i) << "\t";
+            cout << tab_col->GetData(i) << "\t";
+            cout << brdwn_col->GetData(i) << "\t";
+            cout << sec_brdwn_col->GetData(i) << "\t";
+            cout << year_col->GetData(i) << "\t";
+            cout << value_col->GetData(i) << "\t";
+            cout << unit_col->GetData(i) << "\n";
+        }
+
+        cout<< "\nTotal Number of rows read : "<< total_rows << endl;
+
     }
     cout << endl;
     execute->Close();
