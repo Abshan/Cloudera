@@ -41,6 +41,47 @@ using std::endl;
 using std::string;
 using std::vector;
 
+int createtable()
+{
+    KuduSchema schema;
+    KuduSchemaBuilder b;
+    b.AddColumn("id")->Type(KuduColumnSchema::INT32)->NotNull()->PrimaryKey();
+    b.AddColumn("tab")->Type(KuduColumnSchema::STRING)->NotNull();
+    b.AddColumn("brdwn")->Type(KuduColumnSchema::STRING)->NotNull();
+    b.AddColumn("sec_brdwn")->Type(KuduColumnSchema::STRING)->NotNull();
+    b.AddColumn("year")->Type(KuduColumnSchema::INT32)->NotNull();
+    b.AddColumn("value")->Type(KuduColumnSchema::DOUBLE)->NotNull();
+    b.AddColumn("unit")->Type(KuduColumnSchema::STRING)->NotNull();
+
+    Status status = b.Build(&schema);
+    if (!status.ok())
+    {
+        cout << "Failed to build schema: " << status.message() << endl;
+        return 1;
+    }
+
+    vector<string> column_names;
+    column_names.push_back("id");
+
+    // Set the schema and range partition columns.
+    KuduTableCreator *table_creator = client->NewTableCreator();
+    table_creator->table_name(table_name)
+        .schema(&schema)
+        .set_range_partition_columns(column_names);
+
+    // Generate and add the range partition splits for the table.
+    int32_t increment = 1000 / num_tablets;
+    for (int32_t i = 1; i < num_tablets; i++)
+    {
+        KuduPartialRow *row = schema.NewRow();
+        KUDU_CHECK_OK(row->SetInt32(0, i * increment));
+        table_creator->add_range_partition_split(row);
+    }
+
+    Status s = table_creator->Create();
+    delete table_creator;
+}
+
 int ingestData()
 {
 
